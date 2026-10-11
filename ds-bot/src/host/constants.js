@@ -49,6 +49,9 @@ export const TEAM_TOOLS = [
   'create_group', 'update_group', 'delete_group', 'post_to_group', 'ask_user',
   'request_secret', 'list_secrets', 'group_relay', 'read_own_chat',
   'read_group_chat', 'remember', 'forget', 'recall', 'read_browser',
+  'gmail_search_threads', 'gmail_get_thread', 'gmail_get_message', 'gmail_list_labels',
+  'gmail_list_drafts', 'gmail_create_draft', 'gmail_label_message', 'gmail_unlabel_message',
+  'gmail_label_thread', 'gmail_unlabel_thread',
 ]
 // Rounds Bots may start in one group by posting, before the user speaks there again.
 export const ROOM_BOT_ROUNDS = 3

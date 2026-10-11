@@ -32,14 +32,15 @@ const scopeLabel = (scope, roster) => {
 }
 const when = time => (Number.isFinite(time) ? new Date(time).toLocaleString(dateLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')
 
-export function MaskedInput({ value, onChange, onEnter, label, autoFocus = false }) {
+export function MaskedInput({ value, onChange, onEnter, label, autoFocus = false, masked = true, placeholder }) {
+  const hide = masked && MASK_BY_CSS
   return h('input', {
     className: 'bt-secret-input',
-    type: MASK_BY_CSS ? 'text' : 'password',
-    'data-masked': MASK_BY_CSS ? '' : undefined,
+    type: hide || !masked ? 'text' : 'password',
+    'data-masked': hide ? '' : undefined,
     value,
     autoFocus,
-    autoComplete: MASK_BY_CSS ? 'off' : 'new-password',
+    autoComplete: masked && !MASK_BY_CSS ? 'new-password' : 'off',
     autoCorrect: 'off',
     autoCapitalize: 'off',
     spellCheck: false,
@@ -48,7 +49,7 @@ export function MaskedInput({ value, onChange, onEnter, label, autoFocus = false
     'data-bwignore': '',
     'data-form-type': 'other',
     'aria-label': label,
-    placeholder: t('Paste or type the key'),
+    placeholder: placeholder ?? t('Paste or type the key'),
     onChange: event => onChange(event.target.value),
     onKeyDown: (event) => {
       if (event.key !== 'Enter' || event.nativeEvent.isComposing) return

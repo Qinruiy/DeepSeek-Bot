@@ -213,6 +213,8 @@ export function install(rt) {
         case 'connector-connect':
         case 'connector-disconnect':
         case 'connector-retry':
+        case 'connector-oauth-start':
+        case 'connector-oauth-cancel':
           await rt.load()
           return ok(await rt.connectorEndpoint(endpoint, body))
         case 'schedules':
