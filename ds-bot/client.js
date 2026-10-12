@@ -91,7 +91,20 @@ var ZH = {
   Disconnect: "断开",
   Connect: "连接",
   "GitHub token": "GitHub token",
+  "Paste a GitHub token": "粘贴 GitHub token",
   "Create a token on GitHub": "去 GitHub 生成 token",
+  "Read mail and create drafts": "读取邮件、创建草稿",
+  "Google client ID": "Google 客户端 ID",
+  "Paste a Google client ID": "粘贴 Google 客户端 ID",
+  "Google client secret": "Google 客户端密钥",
+  "Paste a Google client secret": "粘贴 Google 客户端密钥",
+  "Saved account {account}": "已保存账号：{account}",
+  "Google client secret saved": "Google 客户端密钥已保存",
+  "Google sign-in saved": "Google 登录已保存",
+  "Register this redirect URI on the OAuth client": "在 OAuth 客户端里登记这个重定向 URI",
+  "Waiting for the Google sign-in": "正在等待 Google 登录",
+  "Open the Google sign-in page": "打开 Google 登录页",
+  "OAuth sign-in at console.cloud.google.com": "去 console.cloud.google.com OAuth 登录",
   "Could not reach GitHub": "连不上 GitHub",
   "GitHub did not accept this token": "GitHub 不接受这个 token",
   "GitHub did not say who this token belongs to": "GitHub 没有返回这个 token 的账号",
@@ -830,6 +843,8 @@ var HOST_ERRORS = [
   [/^The Bot team in (.+) is open in another dsh \((.+)\)\. This window shows the team but cannot change it; close the other one and reload\.$/, "$1 里的 Bot 团队已在另一个 dsh 中打开（$2）。这个窗口只能查看，不能修改；关掉另一个后刷新。"],
   [/^HTTP (\d+)$/, "请求失败（HTTP $1）"],
   [/^GitHub answered (\d+)$/, "GitHub 返回了 $1"],
+  [/^Google answered (\d+)$/, "Google 返回了 $1"],
+  [/^The Gmail sign-in port (\d+) is already in use$/, "Gmail 登录端口 $1 已被占用"],
   [/^Keep the name under (\d+) characters$/, "名字不能超过 $1 个字"],
   // Memory changes the memory panel asked for; the whole message is matched.
   [/^This looks like a key, token, or password[\s\S]*$/, "看起来像密钥、令牌或密码，记忆不会保存这类内容"],
@@ -868,6 +883,21 @@ var HOST_ZH = {
   "No such key": "没有这个密钥",
   "Type a question or a change first": "请先输入问题或要改的内容",
   "No model is available. Add one in Harness settings.": "没有可用的模型，请先在 Harness 设置里添加模型。",
+  "Could not reach Google": "连不上 Google",
+  "Google did not accept this refresh token": "Google 不接受这个刷新令牌",
+  "Google did not return an access token": "Google 没有返回访问令牌",
+  "Google did not say which account this is": "Google 没有返回这个账号",
+  "Paste a Google client ID first": "请先粘贴 Google 客户端 ID",
+  "Paste a Google client secret first": "请先粘贴 Google 客户端密钥",
+  "Google did not return a refresh token": "Google 没有返回刷新令牌",
+  "Google did not accept this sign-in": "Google 不接受这次登录",
+  "This sign-in has expired. Start again.": "这次登录已过期，请重新开始。",
+  "Google sign-in was cancelled": "Google 登录已取消",
+  "This connector signs in through the browser": "这个连接器通过浏览器登录",
+  "The Gmail sign-in page could not start": "Gmail 登录页打不开",
+  "Connect Gmail in Settings → Connectors first.": "请先在设置 → 连接器里连接 Gmail。",
+  "The Gmail sign-in port must be from 0 to 65535": "Gmail 登录端口必须在 0 到 65535 之间",
+  "Gmail addresses must start with https://": "Gmail 地址必须以 https:// 开头",
   "Memory is turned off on this host": "这台主机关闭了记忆功能",
   "The model wrote nothing": "模型没有输出内容",
   "Write the entry to save.": "请写下要保存的内容。"
@@ -2166,9 +2196,13 @@ button.bt-set-row:hover{background:var(--bt-hover)}
 .bt-connector[data-state=ready] .bt-connector-status{color:var(--bt-ink-2)}
 .bt-connector[data-state=error] .bt-connector-status{color:#e02135;white-space:normal}
 .bt-connector-actions{flex:none;display:flex;gap:6px}
+.bt-connector-saved{display:flex;flex-direction:column;gap:4px;padding-left:48px}
 .bt-connector-form{display:flex;flex-direction:column;gap:8px;padding-left:48px;animation:bt-q-in ${SPRING_SHAPE.duration}ms ${SPRING_SHAPE.easing},bt-veil-in .2s ease-out}
 .bt-connector-form-row{display:flex;align-items:center;gap:6px}
 .bt-connector-link{flex:1;font-size:12px;color:var(--bt-ink-2)}
+.bt-connector-redirect{display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:16px;color:var(--bt-ink-3)}
+.bt-connector-redirect code{color:var(--bt-ink-2);word-break:break-all;user-select:all}
+.bt-connector-wait,.bt-connector-open{font-size:12px;line-height:16px;color:var(--bt-ink-2)}
 .bt-connector-error{padding-left:48px;font-size:12px;line-height:16px;color:#e02135}
 
 /* Shell chrome reshaped for the team view. Selectors use stable data attributes where the
@@ -3224,14 +3258,15 @@ var scopeLabel = (scope, roster) => {
   return names.length === 0 ? t("No Bot") : names.join(t(" and "));
 };
 var when = (time) => Number.isFinite(time) ? new Date(time).toLocaleString(dateLocale(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-function MaskedInput({ value, onChange, onEnter, label, autoFocus = false }) {
+function MaskedInput({ value, onChange, onEnter, label, autoFocus = false, masked = true, placeholder }) {
+  const hide = masked && MASK_BY_CSS;
   return (0, import_react5.createElement)("input", {
     className: "bt-secret-input",
-    type: MASK_BY_CSS ? "text" : "password",
-    "data-masked": MASK_BY_CSS ? "" : void 0,
+    type: hide || !masked ? "text" : "password",
+    "data-masked": hide ? "" : void 0,
     value,
     autoFocus,
-    autoComplete: MASK_BY_CSS ? "off" : "new-password",
+    autoComplete: masked && !MASK_BY_CSS ? "new-password" : "off",
     autoCorrect: "off",
     autoCapitalize: "off",
     spellCheck: false,
@@ -3240,7 +3275,7 @@ function MaskedInput({ value, onChange, onEnter, label, autoFocus = false }) {
     "data-bwignore": "",
     "data-form-type": "other",
     "aria-label": label,
-    placeholder: t("Paste or type the key"),
+    placeholder: placeholder ?? t("Paste or type the key"),
     onChange: (event) => onChange(event.target.value),
     onKeyDown: (event) => {
       if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
@@ -9511,25 +9546,91 @@ button.bt-us-row:hover{background:var(--bt-hover)}
 
 // src/client/connectors.js
 var import_react23 = require("react");
-var TOKEN_URL = "https://github.com/settings/personal-access-tokens/new";
 var GitHubMark = () => (0, import_react23.createElement)(
   "svg",
   { width: 20, height: 20, viewBox: "0 0 16 16", fill: "currentColor", "aria-hidden": true },
   (0, import_react23.createElement)("path", { d: "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" })
 );
-var MARKS = { github: GitHubMark };
-var ABOUT = { github: () => t("Repositories, issues, and pull requests") };
+var EnvelopeMark = () => (0, import_react23.createElement)(
+  "svg",
+  {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinejoin: "round",
+    strokeLinecap: "round",
+    "aria-hidden": true
+  },
+  (0, import_react23.createElement)("rect", { x: 3, y: 5, width: 18, height: 14, rx: 2 }),
+  (0, import_react23.createElement)("path", { d: "M4 7.5 12 13l8-5.5" })
+);
+var MARKS = { github: GitHubMark, gmail: EnvelopeMark };
+var ABOUT = {
+  github: () => t("Repositories, issues, and pull requests"),
+  gmail: () => t("Read mail and create drafts")
+};
+var FORMS = {
+  github: {
+    href: "https://github.com/settings/personal-access-tokens/new",
+    link: () => t("Create a token on GitHub"),
+    fields: [{ key: "token", label: () => t("GitHub token"), placeholder: () => t("Paste a GitHub token"), masked: true }]
+  },
+  gmail: {
+    href: "https://console.cloud.google.com/",
+    link: () => t("OAuth sign-in at console.cloud.google.com"),
+    oauth: true,
+    fields: [
+      { key: "clientId", label: () => t("Google client ID"), placeholder: () => t("Paste a Google client ID"), masked: false },
+      { key: "clientSecret", label: () => t("Google client secret"), placeholder: () => t("Paste a Google client secret"), masked: true }
+    ]
+  }
+};
 function statusText(connector) {
   if (connector.state === "connecting") return t("Connecting…");
   if (connector.state === "error") return t("Could not connect: {error}", { error: connector.error ?? "" });
   if (connector.state === "ready") return connector.account ? t("Connected as {account}", { account: connector.account }) : t("Connected");
+  if (connector.account) return t("Saved account {account}", { account: connector.account });
   return ABOUT[connector.id]?.() ?? "";
 }
+function savedIdentity(connector) {
+  const showAccount = connector.account && connector.state !== "ready" && connector.state !== "off";
+  if (!showAccount && !connector.clientId && !connector.clientSecretSaved && !connector.signInSaved) return null;
+  return (0, import_react23.createElement)(
+    "div",
+    { className: "bt-connector-saved" },
+    showAccount ? (0, import_react23.createElement)("span", { className: "bt-connector-wait" }, t("Saved account {account}", { account: connector.account })) : null,
+    connector.clientId ? (0, import_react23.createElement)(
+      "div",
+      { className: "bt-connector-redirect" },
+      (0, import_react23.createElement)("span", null, t("Google client ID")),
+      (0, import_react23.createElement)("code", null, connector.clientId)
+    ) : null,
+    connector.clientSecretSaved ? (0, import_react23.createElement)("span", { className: "bt-connector-wait" }, t("Google client secret saved")) : null,
+    connector.signInSaved ? (0, import_react23.createElement)("span", { className: "bt-connector-wait" }, t("Google sign-in saved")) : null
+  );
+}
 function ConnectorRow({ connector, actions }) {
+  const formSpec = FORMS[connector.id];
   const [form, setForm] = (0, import_react23.useState)(false);
-  const [token, setToken] = (0, import_react23.useState)("");
+  const [values, setValues] = (0, import_react23.useState)({});
   const [busy, setBusy] = (0, import_react23.useState)(false);
   const [error, setError] = (0, import_react23.useState)(null);
+  const [waiting, setWaiting] = (0, import_react23.useState)(null);
+  const filled = formSpec?.fields.every((field) => (values[field.key] ?? "").trim() !== "") ?? false;
+  const on = connector.state !== "off";
+  (0, import_react23.useEffect)(() => {
+    if (!on) return;
+    setForm(false);
+    setWaiting(null);
+    setValues({});
+    setError(null);
+  }, [on]);
+  (0, import_react23.useEffect)(() => {
+    if (connector.oauthNote) setWaiting(null);
+  }, [connector.oauthNote]);
   const run = (task, after) => {
     setBusy(true);
     setError(null);
@@ -9538,16 +9639,34 @@ function ConnectorRow({ connector, actions }) {
     }, (failure) => setError(failure?.message ?? String(failure))).finally(() => setBusy(false));
   };
   const connect = () => {
-    if (busy || token.trim() === "") return;
-    void run(actions.connectorConnect(connector.id, token), () => {
-      setToken("");
+    if (busy || !filled || formSpec === void 0) return;
+    const payload = {};
+    for (const field of formSpec.fields) payload[field.key] = values[field.key] ?? "";
+    if (formSpec.oauth) {
+      void run(actions.connectorOAuthStart(connector.id, payload).then((result) => {
+        setWaiting({ authorizationUrl: result.authorizationUrl, redirectUri: result.redirectUri });
+      }));
+      return;
+    }
+    void run(actions.connectorConnect(connector.id, payload), () => {
+      setValues({});
       setForm(false);
     });
   };
-  const on = connector.state !== "off";
+  const close = () => {
+    const pending = waiting;
+    setForm(false);
+    setValues({});
+    setError(null);
+    setWaiting(null);
+    if (pending) void actions.connectorOAuthCancel(connector.id).catch(() => {
+    });
+  };
   const Mark = MARKS[connector.id];
+  const redirect = waiting?.redirectUri || connector.redirectUri;
+  const shown = error ?? (connector.oauthNote ? hostText(connector.oauthNote) : null);
   const row = (0, import_react23.useRef)(null);
-  useMorph(row, `${form}:${error !== null}:${connector.state}`);
+  useMorph(row, `${form}:${shown !== null}:${connector.state}:${waiting !== null}`);
   return (0, import_react23.createElement)(
     "div",
     { ref: row, className: "bt-connector", "data-state": connector.state },
@@ -9565,26 +9684,42 @@ function ConnectorRow({ connector, actions }) {
         "span",
         { className: "bt-connector-actions" },
         connector.state === "error" ? (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy, onClick: () => void run(actions.connectorRetry(connector.id)) }, t("Try again")) : null,
-        on ? (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy, onClick: () => void run(actions.connectorDisconnect(connector.id)) }, t("Disconnect")) : form ? null : (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", onClick: () => setForm(true) }, t("Connect"))
+        on ? (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy, onClick: () => void run(actions.connectorDisconnect(connector.id)) }, t("Disconnect")) : form || formSpec === void 0 ? null : (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", onClick: () => {
+          setForm(true);
+          if (connector.clientId) setValues((current) => ({ ...current, clientId: current.clientId || connector.clientId }));
+        } }, t("Connect"))
       )
     ),
-    !on && form ? (0, import_react23.createElement)(
+    savedIdentity(connector),
+    !on && form && formSpec ? (0, import_react23.createElement)(
       "div",
       { className: "bt-connector-form" },
-      (0, import_react23.createElement)("label", { className: "bt-q-field bt-secret-field" }, (0, import_react23.createElement)(MaskedInput, { value: token, onChange: setToken, onEnter: connect, label: t("GitHub token"), autoFocus: true })),
+      redirect ? (0, import_react23.createElement)(
+        "div",
+        { className: "bt-connector-redirect" },
+        (0, import_react23.createElement)("span", null, t("Register this redirect URI on the OAuth client")),
+        (0, import_react23.createElement)("code", null, redirect)
+      ) : null,
+      formSpec.fields.map((field, index) => (0, import_react23.createElement)("label", { key: field.key, className: "bt-q-field bt-secret-field" }, (0, import_react23.createElement)(MaskedInput, {
+        value: values[field.key] ?? "",
+        masked: field.masked,
+        placeholder: field.placeholder?.(),
+        onChange: (value) => setValues((current) => ({ ...current, [field.key]: value })),
+        onEnter: connect,
+        label: field.label(),
+        autoFocus: index === 0
+      }))),
+      waiting && !connector.oauthNote ? (0, import_react23.createElement)("span", { className: "bt-connector-wait" }, t("Waiting for the Google sign-in")) : null,
+      waiting?.authorizationUrl ? (0, import_react23.createElement)("a", { className: "bt-connector-open", href: waiting.authorizationUrl, target: "_blank", rel: "noopener noreferrer" }, t("Open the Google sign-in page")) : null,
       (0, import_react23.createElement)(
         "div",
         { className: "bt-connector-form-row" },
-        (0, import_react23.createElement)("a", { className: "bt-connector-link", href: TOKEN_URL, target: "_blank", rel: "noopener noreferrer" }, t("Create a token on GitHub")),
-        (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy, onClick: () => {
-          setForm(false);
-          setToken("");
-          setError(null);
-        } }, t("Cancel")),
-        (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy || token.trim() === "", onClick: connect }, busy ? t("Connecting…") : t("Connect"))
+        (0, import_react23.createElement)("a", { className: "bt-connector-link", href: formSpec.href, target: "_blank", rel: "noopener noreferrer" }, formSpec.link()),
+        (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy, onClick: close }, t("Cancel")),
+        (0, import_react23.createElement)("button", { type: "button", className: "bt-soft bt-soft-sm", disabled: busy || !filled, onClick: connect }, busy ? t("Connecting…") : t("Connect"))
       )
     ) : null,
-    error ? (0, import_react23.createElement)("div", { className: "bt-connector-error", role: "alert" }, error) : null
+    shown ? (0, import_react23.createElement)("div", { className: "bt-connector-error", role: "alert" }, shown) : null
   );
 }
 function ConnectorsPage({ roster, actions }) {
@@ -12774,7 +12909,9 @@ function apply(ctx) {
     secretCancel: (requestId) => after(call("secret-cancel", { requestId })),
     secretUpdate: (name, scope) => after(call("secret-update", { name, scope })),
     secretDelete: (name) => after(call("secret-delete", { name })),
-    connectorConnect: (id, token) => after(call("connector-connect", { id, token })),
+    connectorConnect: (id, fields) => after(call("connector-connect", { id, ...fields })),
+    connectorOAuthStart: (id, fields) => after(call("connector-oauth-start", { id, ...fields })),
+    connectorOAuthCancel: (id) => after(call("connector-oauth-cancel", { id })),
     connectorDisconnect: (id) => after(call("connector-disconnect", { id })),
     connectorRetry: (id) => after(call("connector-retry", { id })),
     schedules: () => call("schedules"),

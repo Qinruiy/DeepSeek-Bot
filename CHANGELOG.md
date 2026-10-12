@@ -9,6 +9,7 @@ All notable changes to DS Bot are listed here. The format follows [Keep a Change
 - In a Bot's chat or a group chat, `@` lists the Bots you can mention first: a group's members and **Everyone**, or the other Bots. Picking one writes `@Name`.
 - **Reference a chat** in the composer's **+** menu adds another Bot's chat, or a recent conversation outside the team, to your message as context.
 - A Main Bot can stop another Bot's running turn. The Bot is told why, and its reply goes back to the Main Bot.
+- A Gmail connector on Settings → Connectors. Paste a Google OAuth client ID and client secret, register the loopback redirect DS Bot shows, and sign in in the browser. The refresh token comes back to `127.0.0.1` and is kept as `GMAIL_REFRESH_TOKEN`, with the client secret as `GMAIL_CLIENT_SECRET`, shared with no Bot's shell. Bots then search and read mail, list and change labels, and create drafts through the Gmail API. Drafts are not sent. A personal @gmail.com account can use this; the hosted Gmail MCP server cannot, because it is limited to the Workspace Developer Preview Program. The access token stays in memory and is refreshed before it expires. The connector row keeps showing the saved account and the public client ID, including when the connection fails; the client secret and refresh token stay hidden and are only marked as saved. `gmail: false` hides the connector.
 
 ### Changed
 

@@ -487,9 +487,13 @@ button.bt-set-row:hover{background:var(--bt-hover)}
 .bt-connector[data-state=ready] .bt-connector-status{color:var(--bt-ink-2)}
 .bt-connector[data-state=error] .bt-connector-status{color:#e02135;white-space:normal}
 .bt-connector-actions{flex:none;display:flex;gap:6px}
+.bt-connector-saved{display:flex;flex-direction:column;gap:4px;padding-left:48px}
 .bt-connector-form{display:flex;flex-direction:column;gap:8px;padding-left:48px;animation:bt-q-in ${SPRING_SHAPE.duration}ms ${SPRING_SHAPE.easing},bt-veil-in .2s ease-out}
 .bt-connector-form-row{display:flex;align-items:center;gap:6px}
 .bt-connector-link{flex:1;font-size:12px;color:var(--bt-ink-2)}
+.bt-connector-redirect{display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:16px;color:var(--bt-ink-3)}
+.bt-connector-redirect code{color:var(--bt-ink-2);word-break:break-all;user-select:all}
+.bt-connector-wait,.bt-connector-open{font-size:12px;line-height:16px;color:var(--bt-ink-2)}
 .bt-connector-error{padding-left:48px;font-size:12px;line-height:16px;color:#e02135}
 
 /* Shell chrome reshaped for the team view. Selectors use stable data attributes where the

@@ -26,6 +26,7 @@ Tested with dsh `0.2.1-alpha.1` (Web and Desktop) on Linux.
 - **Bot browser (dsh Desktop only)**: see [Bot browser](#bot-browser).
 - **Images**: for a model that cannot read images, a vision model first turns the image into text.
 - **Secrets**: a Bot asks for an API key or token with a card in its own chat and never sees the value. See [Secrets](#secrets).
+- **Connectors**: Settings → Connectors gives every Bot tools from an outside service. GitHub takes a personal access token. Gmail signs in with a Google OAuth client through the browser. See [Configuration](#configuration).
 - **Usage**: Settings → Usage shows token usage by time (24 hours to 12 months, or days picked on a calendar), by Bot and by model, with a page for each Bot and each model. Calls that a Session logs are read from the logs, so older chats count too. Calls that leave no log (checkpoints, handoff notes, the steward, image readings, dsh titles and compaction) are counted while they stream, from the time the plugin runs. Tokens only, no cost.
 - **Make it yours**: name, role, instructions, model and look (20 characters and 12 colors, or your own photo) for each Bot; a theme, an accent color and an avatar animation level (quiet, normal or lively) for the team. A pinned Bot or group chat shows a small pushpin in the sidebar. Settings has these pages: General (look), Bots (Main Bots and each Bot's settings), Group chats (each group's settings), Connectors, Scheduled tasks, Usage, Secrets, Feedback and About DS Bot (versions, updates and links).
 
@@ -73,7 +74,16 @@ Options go in the profile's `cordis.patch.yml`, under the `bot` entry. All of th
     updateCheck: true               # look for a newer DS Bot when a window opens; default true
     updateRegistry: https://registry.example/   # ask only this npm registry for updates
     github: false                   # hide the GitHub connector; default shown in Connectors
+    gmail: false                    # hide the Gmail connector; default shown in Connectors
+    # gmail:                        # optional; every address must start with https://
+    #   api: https://gmail.googleapis.com
+    #   tokenUrl: https://oauth2.googleapis.com/token
+    #   userinfo: https://www.googleapis.com/oauth2/v2/userinfo
+    #   authUrl: https://accounts.google.com/o/oauth2/v2/auth
+    #   oauthPort: 47321            # loopback port for the Google redirect
 ```
+
+Gmail signs in through the browser on the machine that runs DSH. Create an OAuth client in Google Cloud with the Gmail API enabled, and register the redirect URI shown on the Connectors page (`http://127.0.0.1:47321/oauth/callback`, unless `oauthPort` changes it). Paste the client ID and client secret, then Connect. DS Bot opens Google's consent page. The consent asks for `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`, `https://www.googleapis.com/auth/gmail.modify`, and `https://www.googleapis.com/auth/userinfo.email`. The client secret and refresh token are saved as `GMAIL_CLIENT_SECRET` and `GMAIL_REFRESH_TOKEN`, shared with no Bot's shell. DS Bot exchanges the refresh token for an access token in memory and calls the Gmail API with it. The hosted Gmail MCP server is part of the Workspace Developer Preview Program, which does not accept a personal @gmail.com account, so these tools talk to `https://gmail.googleapis.com` instead. Bots can search and read mail, list labels, add and remove labels, and create drafts. Drafts are not sent. While the Google app is in testing, that refresh token expires after about seven days.
 
 **Updates**: when a window opens, DS Bot asks where it was installed from for a newer release: the npm registry (the one the DSH plugin manager installs from, then its fallbacks), or the latest GitHub release for a `github:…#vX.Y.Z` install. A newer version shows a cloud button at the top right of the sidebar; **Update** reinstalls DS Bot through the DSH plugin manager, and the new version runs from the next DSH start. A linked or local checkout is never offered an update. Settings → About DS Bot shows the same state, with **Check for updates** to ask again at once.
 
